@@ -1,592 +1,322 @@
-# Create print.html for pure client-side printing on GitHub Pages
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة البطاقات المهنية</title>
-    <!-- مكتبة qrcode-generator -->
+    <!-- مكتبة توليد رمز QR -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
-
-        @page {
-            size: A4 portrait;
-            margin: 8mm;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Sakkal Majalla', 'Amiri', 'Traditional Arabic', sans-serif;
+            font-family: 'Sakkal Majalla', 'Amiri', 'Traditional Arabic', serif;
         }
 
         body {
-            background-color: #f1f5f9;
-            color: #1e293b;
+            background-color: #525659;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .no-print {
-            background: #ffffff;
+        /* شريط أدوات الطباعة العلوي */
+        .no-print-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            color: white;
             padding: 12px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: center;
-            margin-bottom: 20px;
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         .btn-print {
             background-color: #047857;
             color: white;
-            padding: 10px 24px;
             border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: background 0.2s;
-        }
-
-        .btn-print:hover {
-            background-color: #065f46;
-        }
-
-        .btn-print-back {
-            background-color: #0284c7;
-        }
-
-        .btn-print-back:hover {
-            background-color: #0369a1;
-        }
-
-        .page {
-            width: 194mm;
-            height: 281mm;
-            page-break-after: always;
-            margin: 0 auto 20px auto;
-            background: white;
-            padding: 2mm;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            
-            display: grid;
-            grid-template-columns: repeat(2, 97mm);
-            grid-template-rows: repeat(4, 65mm);
-            gap: 3mm;
-            justify-content: center;
-            align-content: center;
-        }
-
-        .card {
-            width: 97mm;
-            height: 65mm;
-            border: 1px solid #cbd5e1;
+            padding: 8px 20px;
             border-radius: 5px;
-            position: relative;
-            overflow: hidden;
-            background: #ffffff;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        /* --- الهيدر --- */
-        .card-header {
-            background-color: #ffffff;
-            color: #000000;
-            position: relative;
-            height: 15mm;
-            border-bottom: 1px solid #000000;
-            padding: 2px 4px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-        }
-
-        .corner-stripes {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 25mm;
-            height: 15mm;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .stripe-red {
-            position: absolute;
-            top: -2mm;
-            right: 5mm;
-            width: 2mm;
-            height: 25mm;
-            background-color: #d21034;
-            transform: rotate(-45deg);
-            transform-origin: top right;
-        }
-
-        .stripe-green {
-            position: absolute;
-            top: -2mm;
-            right: 9mm;
-            width: 2mm;
-            height: 25mm;
-            background-color: #006633;
-            transform: rotate(-45deg);
-            transform-origin: top right;
-        }
-
-        .header-top {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            z-index: 2;
-            margin-top: 1px;
-        }
-
-        .header-logo {
-            position: absolute;
-            left: 2px;
-            top: 0px;
-            width: 11mm;
-            height: 11mm;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .header-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .header-main-title {
-            font-size: 10.5pt;
             font-weight: bold;
-            color: #000000;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-print:hover { background-color: #065f46; }
+
+        .btn-back {
+            background-color: #475569;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* حاوية أوراق الطباعة A4 */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 10mm;
+            margin: 50px auto 20px auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8mm 6mm;
+            page-break-after: always;
+        }
+
+        /* هيكل البطاقة المهنية المقاس المعياري (85mm x 54mm) */
+        .card {
+            width: 85mm;
+            height: 54mm;
+            border: 1px solid #000;
+            border-radius: 4mm;
+            position: relative;
+            background-color: #fff;
+            overflow: hidden;
+            padding: 2mm 3mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-header {
             text-align: center;
+            border-bottom: 1.5px solid #047857;
+            padding-bottom: 1mm;
+        }
+
+        .card-header h2 {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #047857;
             line-height: 1.1;
         }
 
-        .header-bottom {
+        .card-header h3 {
+            font-size: 9pt;
+            font-weight: normal;
+            color: #333;
+        }
+
+        .card-body {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: relative;
-            z-index: 2;
-            padding: 0 4px;
-            margin-bottom: 1px;
+            margin-top: 1mm;
         }
 
-        .header-bottom .ministry, .header-bottom .directorate {
+        .info-section {
+            flex: 1;
             font-size: 8.5pt;
-            font-weight: bold;
-            color: #000000;
-        }
-
-        /* --- عنوان البطاقة الرئيسي --- */
-        .card-main-title {
-            text-align: center;
-            font-size: 11pt;
-            font-weight: bold;
-            color: #000000;
-            margin-top: 2px;
-            text-decoration: underline;
-            line-height: 1;
-        }
-
-        /* --- جسم البطاقة --- */
-        .card-body {
-            display: flex;
-            align-items: center;
-            padding: 2px 5px;
-            height: 36mm;
-            gap: 4px;
-            flex-direction: row;
-        }
-
-        .qr-container {
-            width: 20mm;
-            height: 20mm;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .qr-container svg {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .info-container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            overflow: hidden;
+            line-height: 1.35;
+            padding-left: 2mm;
         }
 
         .info-row {
             display: flex;
-            flex-direction: column;
+            margin-bottom: 0.5mm;
         }
 
         .info-label {
-            font-size: 7pt;
-            color: #475569;
             font-weight: bold;
-            line-height: 1;
+            color: #1e293b;
+            min-width: 14mm;
         }
 
         .info-value {
-            font-size: 9pt;
-            color: #0f172a;
+            color: #000;
             font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.1;
         }
 
-        /* --- العمود الأيمن (الصورة والرقم والمدير) --- */
-        .photo-column {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            width: 28mm;
-            height: 37mm;
-            flex-shrink: 0;
-        }
-
-        .code-above-photo {
-            font-size: 8pt;
-            font-weight: bold;
-            color: #000000;
-            text-align: center;
-            line-height: 1;
-            white-space: nowrap;
-        }
-
-        .code-space {
-            display: inline-block;
-            width: 10mm;
-        }
-
-        .photo-container {
+        .photo-section {
             width: 23mm;
             height: 27mm;
-            border: 1.5px solid #047857;
-            border-radius: 4px;
-            background: #f8fafc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8pt;
-            color: #94a3b8;
+            border: 1px solid #94a3b8;
+            border-radius: 2mm;
             overflow: hidden;
+            background: #f8fafc;
         }
 
-        .photo-container img {
+        .photo-section img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .director-below-photo {
-            font-size: 6.5pt;
-            font-weight: bold;
-            color: #1e293b;
-            text-align: center;
-            line-height: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-
         .card-footer {
-            height: 7.5mm;
-            background-color: #064e3b;
-            color: #ffffff;
-            font-size: 7pt;
-            font-weight: bold;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 0 3px;
-            line-height: 1.1;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 1mm;
         }
 
-        .card-back {
-            width: 97mm;
-            height: 65mm;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            overflow: hidden;
-            background: #ffffff;
+        .qr-container {
+            width: 14mm;
+            height: 14mm;
         }
 
-        .card-back img {
+        .qr-container svg {
             width: 100%;
             height: 100%;
-            object-fit: fill;
         }
 
-        .no-data-msg {
+        .signature-section {
             text-align: center;
-            padding: 50px 20px;
-            font-size: 18px;
-            color: #e11d48;
+            font-size: 7pt;
+            font-weight: bold;
         }
 
+        /* تنسيقات إعدادات الطباعة للورق */
         @media print {
-            .no-print {
-                display: none !important;
-            }
-
             body {
                 background: none;
-            }
-
-            .page {
-                box-shadow: none;
-                margin: 0;
                 padding: 0;
             }
 
-            .card, .card-back {
-                border: 0.5pt solid #cbd5e1;
-            }
-
-            body.print-front-mode .back-page {
+            .no-print-bar {
                 display: none !important;
             }
 
-            body.print-back-mode .front-page {
-                display: none !important;
+            .page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 0;
             }
         }
     </style>
 </head>
-<body class="print-front-mode">
+<body>
 
-    <div class="no-print">
-        <button onclick="printFront()" class="btn-print">طباعة الوجه (البطاقات)</button>
-        <button onclick="printBack()" class="btn-print btn-print-back">طباعة الظهر (الخلفية)</button>
+    <!-- شريط التحكم العلوي -->
+    <div class="no-print-bar">
+        <a href="index.html" class="btn-back">⬅️ العودة للرئيسية</a>
+        <div>
+            <span>جاهز للطباعة: </span>
+            <strong id="cardCountDisplay">0</strong> بطاقات
+        </div>
+        <button class="btn-print" onclick="window.print()">طباعة الآن 🖨️</button>
     </div>
 
-    <!-- الحاوية الديناميكية للبطاقات -->
+    <!-- حاوية الصفحات والبطاقات -->
     <div id="printContainer"></div>
 
     <script>
-        function utf8Encode(str) {
+        // دالة ترميز النصوص العربية بشكل نقي إلى UTF-8 ليتمكن QR من قراءته مباشرة
+        function encodeToUtf8(str) {
             return unescape(encodeURIComponent(str));
-        }
-
-        function formatDate(dateObj) {
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const d = String(dateObj.getDate()).padStart(2, '0');
-            return `${y}/${m}/${d}`;
         }
 
         function renderCards() {
             const container = document.getElementById('printContainer');
-            
-            // قراءة البيانات من localStorage المفترضة
             const printDataRaw = localStorage.getItem('print_data');
             
-            // بيانات تجريبية في حال عدم وجود بيانات
-            let printData = null;
-            if (printDataRaw) {
-                try {
-                    printData = JSON.parse(printDataRaw);
-                } catch(e) {
-                    console.error("خطأ في قراءة البيانات", e);
-                }
+            if (!printDataRaw) {
+                container.innerHTML = '<h2 style="color:white; margin-top:100px;">لا توجد بيانات للطباعة! يرجى العودة للصفحة الرئيسية.</h2>';
+                return;
             }
 
-            // إذا لم توجد بيانات مخزنة، يتم تحميل 9 بطاقات نموذجية لتجربة المعاينة على GitHub Pages
-            if (!printData || !printData.employees || printData.employees.length === 0) {
-                const sampleEmployees = [];
-                for (let i = 1; i <= 9; i++) {
-                    sampleEmployees.push({
-                        code: "100" + i,
-                        lastName: "بن محمد",
-                        firstName: "عبد الله " + i,
-                        birthDate: "1988/05/12",
-                        rank: "أستاذ التعليم الثانوي",
-                        photo: ""
-                    });
-                }
-                printData = {
-                    employees: sampleEmployees,
-                    workPlace: "ثانوية متقن توقرت",
-                    directorName: "أحمد علي",
-                    cardBackImage: "aria.jpg"
-                };
-            }
-
+            const printData = JSON.parse(printDataRaw);
             const employees = printData.employees || [];
-            const workPlace = printData.workPlace || '';
-            const directorName = printData.directorName || '';
-            const cardBackImage = printData.cardBackImage || 'aria.jpg';
+            
+            document.getElementById('cardCountDisplay').innerText = employees.length;
 
-            const now = new Date();
-            const issueDate = formatDate(now);
-            const expDateObj = new Date(now);
-            expDateObj.setFullYear(expDateObj.getFullYear() + 2);
-            const expiryDate = formatDate(expDateObj);
-            const currentYear = now.getFullYear();
+            if (employees.length === 0) {
+                container.innerHTML = '<h2 style="color:white; margin-top:100px;">لم يتم تحديد أي موظف للطباعة.</h2>';
+                return;
+            }
 
-            const total = employees.length;
-            const pages = Math.ceil(total / 8);
+            let currentPage = document.createElement('div');
+            currentPage.className = 'page';
+            container.appendChild(currentPage);
 
-            let html = '';
+            let cardsInPage = 0;
 
-            // 1. توليد صفحات الوجه (Front Pages)
-            for (let p = 0; p < pages; p++) {
-                html += `<div class="page front-page">`;
-                for (let i = 0; i < 8; i++) {
-                    const index = (p * 8) + i;
-                    if (index >= total) break;
+            employees.forEach((emp, index) => {
+                // إذا تجاوزت الصفحة 10 بطاقات، نفتح صفحة A4 جديدة
+                if (cardsInPage >= 10) {
+                    currentPage = document.createElement('div');
+                    currentPage.className = 'page';
+                    container.appendChild(currentPage);
+                    cardsInPage = 0;
+                }
 
-                    const emp = employees[index];
-                    const code = emp.code || '';
-                    const lastName = emp.lastName || '';
-                    const firstName = emp.firstName || '';
-                    const fullName = (lastName + ' ' + firstName).trim();
-                    const birthDate = emp.birthDate || '';
-                    const rank = emp.rank || '';
-                    const photo = emp.photo || '';
+                // نص الـ QR الشامل لجيع المعلومات الأساسية
+                const qrContent = `الجمهورية الجزائرية الديمقراطية الشعبية\nوزارة التربية الوطنية\nالاسم واللقب: ${emp.firstName} ${emp.lastName}\nالرمز: ${emp.code}\nتاريخ الميلاد: ${emp.birthDate}\nالرتبة: ${emp.rank}\nالمؤسسة: ${printData.workPlace}`;
 
-                    const qrContent = `الرقم: ${code}\nالاسم واللقب: ${fullName}\nتاريخ الميلاد: ${birthDate}\nالرتبة: ${rank}\nمكان العمل: ${workPlace}\nتاريخ الإصدار: ${issueDate}\nتاريخ الصلاحية: ${expiryDate}`;
-                    const qrId = `qr_${p}_${i}`;
-
-                    html += `
+                const cardHTML = `
                     <div class="card">
                         <div class="card-header">
-                            <div class="corner-stripes">
-                                <div class="stripe-red"></div>
-                                <div class="stripe-green"></div>
-                            </div>
-                            <div class="header-top">
-                                <div class="header-logo">
-                                    <img src="minis.jpg" alt="شعار الوزارة" onerror="this.style.display='none'">
-                                </div>
-                                <div class="header-main-title">الجمهورية الجزائرية الديمقراطية الشعبية</div>
-                            </div>
-                            <div class="header-bottom">
-                                <span class="directorate">مديرية التربية لولاية توقرت</span>
-                                <span class="ministry">وزارة التربية الوطنية</span>
-                            </div>
+                            <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
+                            <h3>وزارة التربية الوطنية</h3>
                         </div>
 
-                        <div class="card-main-title">بطاقة التعريف المهنية</div>
-
                         <div class="card-body">
-                            <div class="qr-container" id="${qrId}" data-qr="${encodeURIComponent(qrContent)}"></div>
-
-                            <div class="info-container">
-                                <div class="info-row">
-                                    <span class="info-label">اللقب والاسم</span>
-                                    <span class="info-value">${fullName}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">تاريخ الميلاد</span>
-                                    <span class="info-value font-mono">${birthDate}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">الرتبة</span>
-                                    <span class="info-value">${rank}</span>
-                                </div>
-                                ${workPlace ? `
-                                <div class="info-row">
-                                    <span class="info-label">مكان العمل</span>
-                                    <span class="info-value">${workPlace}</span>
-                                </div>` : ''}
+                            <div class="info-section">
+                                <div class="info-row"><span class="info-label">الرقم:</span><span class="info-value">${emp.code}</span></div>
+                                <div class="info-row"><span class="info-label">اللقب:</span><span class="info-value">${emp.lastName}</span></div>
+                                <div class="info-row"><span class="info-label">الاسم:</span><span class="info-value">${emp.firstName}</span></div>
+                                <div class="info-row"><span class="info-label">الميلاد:</span><span class="info-value">${emp.birthDate}</span></div>
+                                <div class="info-row"><span class="info-label">الرتبة:</span><span class="info-value">${emp.rank}</span></div>
                             </div>
 
-                            <div class="photo-column">
-                                <div class="code-above-photo">
-                                    الرقم:<span class="code-space"></span>/${currentYear}
-                                </div>
-                                <div class="photo-container">
-                                    ${photo ? `<img src="${photo}" alt="الصورة">` : `<span>صورة</span>`}
-                                </div>
-                                <div class="director-below-photo">
-                                    ${directorName ? 'مدير التربية: ' + directorName : 'مدير التربية'}
-                                </div>
+                            <div class="photo-section">
+                                <img src="${emp.photo}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100%\' height=\'100%\' fill=\'%23e2e8f0\'/><text x=\'50%\' y=\'50%\' font-size=\'12\' text-anchor=\'middle\' fill=\'%2394a3b8\' dy=\'.3em\'>بدون صورة</text></svg>'">
                             </div>
                         </div>
 
                         <div class="card-footer">
-                            على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات
+                            <div class="qr-container" data-qr="${encodeURIComponent(qrContent)}"></div>
+                            <div class="signature-section">
+                                <div>${printData.workPlace}</div>
+                                <div>مدير التربية: ${printData.directorName}</div>
+                            </div>
                         </div>
-                    </div>`;
-                }
-                html += `</div>`;
-            }
+                    </div>
+                `;
 
-            // 2. توليد صفحات الظهر (Back Pages)
-            for (let p = 0; p < pages; p++) {
-                html += `<div class="page back-page">`;
-                for (let i = 0; i < 8; i++) {
-                    const index = (p * 8) + i;
-                    if (index >= total) break;
-                    html += `
-                    <div class="card-back">
-                        <img src="${cardBackImage}" alt="خلفية البطاقة" onerror="this.src='aria.jpg'">
-                    </div>`;
-                }
-                html += `</div>`;
-            }
+                currentPage.innerHTML += cardHTML;
+                cardsInPage++;
+            });
 
-            container.innerHTML = html;
-
-            // توليد الـ QR لكل بطاقة
+            // توليد الـ QR لكل بطاقة باستخدام نمط Byte والترميز الصحيح
             document.querySelectorAll('.qr-container').forEach(c => {
                 const rawText = decodeURIComponent(c.getAttribute('data-qr'));
                 if (rawText) {
                     try {
                         const qr = qrcode(0, 'M');
-                        qr.addData(utf8Encode(rawText));
+                        qr.addData(encodeToUtf8(rawText));
                         qr.make();
                         c.innerHTML = qr.createSvgTag({ scalable: true });
                     } catch (e) {
-                        console.error("خطأ QR:", e);
+                        console.error("خطأ توليد الـ QR:", e);
                     }
                 }
             });
         }
 
-        function printFront() {
-            document.body.className = 'print-front-mode';
-            window.print();
-        }
-
-        function printBack() {
-            document.body.className = 'print-back-mode';
-            window.print();
-        }
-
-        document.addEventListener("DOMContentLoaded", renderCards);
+        // تشغيل البناء مباشرة فور التحميل
+        document.addEventListener('DOMContentLoaded', renderCards);
     </script>
 </body>
 </html>
-"""
-
-with open("print.html", "w", encoding="utf-8") as f:
-    f.write(html_content)
-
-print("Created print.html successfully")

@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طباعة البطاقات المهنية</title>
-    <!-- مكتبة توليد رمز QR -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <title>إدارة وطباعة البطاقات المهنية</title>
+    <!-- مكتبة Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- مكتبة قص الصور Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
@@ -14,309 +17,411 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Sakkal Majalla', 'Amiri', 'Traditional Arabic', serif;
+            font-family: 'Sakkal Majalla', 'Amiri', sans-serif;
         }
 
         body {
-            background-color: #525659;
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            padding: 20px;
         }
 
-        /* شريط أدوات الطباعة العلوي */
-        .no-print-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #1e293b;
-            color: white;
-            padding: 12px 20px;
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #047857;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            background: #f8fafc;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        input[type="text"], input[type="file"] {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+        }
+
+        .selection-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
         }
 
-        .btn-print {
+        .selection-info {
+            font-weight: bold;
+            color: #065f46;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        th {
             background-color: #047857;
             color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
         }
 
-        .btn-print:hover { background-color: #065f46; }
-
-        .btn-back {
-            background-color: #475569;
-            color: white;
-            border: none;
+        .btn {
             padding: 8px 16px;
-            border-radius: 5px;
-            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
             font-size: 14px;
+            transition: all 0.2s;
         }
 
-        /* حاوية أوراق الطباعة A4 */
-        .page {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 10mm;
-            margin: 50px auto 20px auto;
-            background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
-            gap: 8mm 6mm;
-            page-break-after: always;
-        }
+        .btn-excel { background-color: #0284c7; color: white; }
+        .btn-excel:hover { background-color: #0369a1; }
 
-        /* هيكل البطاقة المهنية المقاس المعياري (85mm x 54mm) */
-        .card {
-            width: 85mm;
-            height: 54mm;
-            border: 1px solid #000;
-            border-radius: 4mm;
-            position: relative;
-            background-color: #fff;
-            overflow: hidden;
-            padding: 2mm 3mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+        .btn-submit { background-color: #047857; color: white; width: 100%; font-size: 18px; padding: 12px; }
+        .btn-submit:hover { background-color: #065f46; }
 
-        .card-header {
-            text-align: center;
-            border-bottom: 1.5px solid #047857;
-            padding-bottom: 1mm;
-        }
+        .btn-danger { background-color: #e11d48; color: white; padding: 4px 8px; font-size: 12px; }
+        .btn-crop { background-color: #8b5cf6; color: white; padding: 4px 8px; font-size: 12px; }
 
-        .card-header h2 {
-            font-size: 11pt;
-            font-weight: bold;
-            color: #047857;
-            line-height: 1.1;
-        }
-
-        .card-header h3 {
-            font-size: 9pt;
-            font-weight: normal;
-            color: #333;
-        }
-
-        .card-body {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1mm;
-        }
-
-        .info-section {
-            flex: 1;
-            font-size: 8.5pt;
-            line-height: 1.35;
-            padding-left: 2mm;
-        }
-
-        .info-row {
-            display: flex;
-            margin-bottom: 0.5mm;
-        }
-
-        .info-label {
-            font-weight: bold;
-            color: #1e293b;
-            min-width: 14mm;
-        }
-
-        .info-value {
-            color: #000;
-            font-weight: bold;
-        }
-
-        .photo-section {
-            width: 23mm;
-            height: 27mm;
-            border: 1px solid #94a3b8;
-            border-radius: 2mm;
-            overflow: hidden;
-            background: #f8fafc;
-        }
-
-        .photo-section img {
-            width: 100%;
-            height: 100%;
+        .img-preview {
+            width: 35px;
+            height: 40px;
             object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
         }
 
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-top: 1px solid #cbd5e1;
-            padding-top: 1mm;
+        .checkbox-cell input { width: 18px; height: 18px; cursor: pointer; }
+
+        /* نافذة قص الصورة Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
         }
 
-        .qr-container {
-            width: 14mm;
-            height: 14mm;
-        }
-
-        .qr-container svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .signature-section {
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
             text-align: center;
-            font-size: 7pt;
-            font-weight: bold;
         }
 
-        /* تنسيقات إعدادات الطباعة للورق */
-        @media print {
-            body {
-                background: none;
-                padding: 0;
-            }
+        .cropper-container-box {
+            max-height: 350px;
+            margin: 15px 0;
+        }
 
-            .no-print-bar {
-                display: none !important;
-            }
-
-            .page {
-                margin: 0;
-                box-shadow: none;
-                page-break-after: always;
-            }
-
-            @page {
-                size: A4 portrait;
-                margin: 0;
-            }
+        .cropper-container-box img {
+            max-width: 100%;
         }
     </style>
 </head>
 <body>
 
-    <!-- شريط التحكم العلوي -->
-    <div class="no-print-bar">
-        <a href="index.html" class="btn-back">⬅️ العودة للرئيسية</a>
-        <div>
-            <span>جاهز للطباعة: </span>
-            <strong id="cardCountDisplay">0</strong> بطاقات
+    <div class="container">
+        <h1>نظام إعداد وطباعة البطاقات المهنية</h1>
+
+        <!-- الإعدادات -->
+        <div class="config-grid">
+            <div class="form-group">
+                <label>مكان العمل (المؤسسة):</label>
+                <input type="text" id="workPlace" value="ثانوية متقن توقرت">
+            </div>
+            <div class="form-group">
+                <label>اسم مدير التربية:</label>
+                <input type="text" id="directorName" value="أحمد علي">
+            </div>
+            <div class="form-group">
+                <label>صورة ظهر البطاقة الافتراضية:</label>
+                <input type="text" id="cardBackImage" value="aria.jpg">
+            </div>
+            <div class="form-group">
+                <label>استيراد ملف Excel الموظفين:</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="importExcel(event)">
+            </div>
         </div>
-        <button class="btn-print" onclick="window.print()">طباعة الآن 🖨️</button>
+
+        <div class="selection-bar">
+            <button type="button" class="btn btn-excel" onclick="addEmptyRow()">+ إضافة موظف يدوياً</button>
+            <div class="selection-info">
+                المحدد للطباعة: <span id="selectedCount">0</span> من أصل <span id="totalCount">0</span>
+            </div>
+        </div>
+
+        <!-- الجدول -->
+        <form id="mainForm" onsubmit="handlePrintSubmit(event)">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" checked title="تحديد/إلغاء الكل">
+                            </th>
+                            <th>الرمز (ع 2)</th>
+                            <th>اللقب (ع 3)</th>
+                            <th>الاسم (ع 4)</th>
+                            <th>تاريخ الميلاد (ع 5)</th>
+                            <th>الرتبة (ع 6)</th>
+                            <th>معاينة</th>
+                            <th>إدراج وقص الصورة</th>
+                            <th>حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="empTableBody"></tbody>
+                </table>
+            </div>
+
+            <button type="submit" class="btn btn-submit">طباعة البطاقات المحددة 🖨️</button>
+        </form>
     </div>
 
-    <!-- حاوية الصفحات والبطاقات -->
-    <div id="printContainer"></div>
+    <!-- Modal القص -->
+    <div id="cropModal" class="modal">
+        <div class="modal-content">
+            <h3>قص صورة الموظف</h3>
+            <div class="cropper-container-box">
+                <img id="cropImage" src="">
+            </div>
+            <button class="btn btn-excel" onclick="applyCrop()">تطبيق القص والحفظ</button>
+            <button class="btn btn-danger" onclick="closeCropModal()">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- خفي لاختيار الملفات -->
+    <input type="file" id="rowFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
 
     <script>
-        // دالة ترميز النصوص العربية بشكل نقي إلى UTF-8 ليتمكن QR من قراءته مباشرة
-        function encodeToUtf8(str) {
-            return unescape(encodeURIComponent(str));
+        let cropper = null;
+        let activeRowForCrop = null;
+
+        function toggleSelectAll(master) {
+            document.querySelectorAll('.emp-checkbox').forEach(cb => cb.checked = master.checked);
+            updateCounters();
         }
 
-        function renderCards() {
-            const container = document.getElementById('printContainer');
-            const printDataRaw = localStorage.getItem('print_data');
-            
-            if (!printDataRaw) {
-                container.innerHTML = '<h2 style="color:white; margin-top:100px;">لا توجد بيانات للطباعة! يرجى العودة للصفحة الرئيسية.</h2>';
-                return;
+        function updateCounters() {
+            const total = document.querySelectorAll('.emp-checkbox').length;
+            const selected = document.querySelectorAll('.emp-checkbox:checked').length;
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('selectedCount').innerText = selected;
+        }
+
+        function addRow(data = {}) {
+            const tbody = document.getElementById('empTableBody');
+            const tr = document.createElement('tr');
+
+            const photoSrc = data.photo || `${data.code || ''}.jpg`;
+
+            tr.innerHTML = `
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="emp-checkbox" onchange="updateCounters()" checked>
+                </td>
+                <td><input type="text" class="emp-code" value="${data.code || ''}" required style="width: 70px;"></td>
+                <td><input type="text" class="emp-lastName" value="${data.lastName || ''}" required></td>
+                <td><input type="text" class="emp-firstName" value="${data.firstName || ''}" required></td>
+                <td><input type="text" class="emp-birthDate" value="${data.birthDate || ''}" placeholder="YYYY/MM/DD" style="width: 100px;"></td>
+                <td><input type="text" class="emp-rank" value="${data.rank || ''}"></td>
+                <td>
+                    <img src="${photoSrc}" class="img-preview" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'30\' height=\'35\'><rect width=\'100%\' height=\'100%\' fill=\'%23e2e8f0\'/></svg>'">
+                    <input type="hidden" class="emp-photo-data" value="${photoSrc}">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-crop" onclick="triggerPhotoUpload(this)">اختر وقص</button>
+                </td>
+                <td><button type="button" class="btn btn-danger" onclick="this.closest('tr').remove(); updateCounters();">حذف</button></td>
+            `;
+
+            tbody.appendChild(tr);
+            updateCounters();
+        }
+
+        function addEmptyRow() {
+            const count = document.querySelectorAll('#empTableBody tr').length + 1;
+            addRow({ code: count, lastName: '', firstName: '', birthDate: '', rank: '' });
+        }
+
+        function triggerPhotoUpload(btn) {
+            activeRowForCrop = btn.closest('tr');
+            document.getElementById('rowFileInput').click();
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = document.getElementById('cropImage');
+                img.src = evt.target.result;
+                document.getElementById('cropModal').style.display = 'flex';
+
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(img, {
+                    aspectRatio: 23 / 27, // نسبة الطول للعرض المطلوبة للبطاقة
+                    viewMode: 1
+                });
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        }
+
+        function applyCrop() {
+            if (!cropper || !activeRowForCrop) return;
+
+            const canvas = cropper.getCroppedCanvas({ width: 230, height: 270 });
+            const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+            activeRowForCrop.querySelector('.img-preview').src = croppedDataUrl;
+            activeRowForCrop.querySelector('.emp-photo-data').value = croppedDataUrl;
+
+            closeCropModal();
+        }
+
+        function closeCropModal() {
+            document.getElementById('cropModal').style.display = 'none';
+            if (cropper) cropper.destroy();
+        }
+
+        function parseExcelDate(excelDate) {
+            if (!excelDate) return '';
+            if (typeof excelDate === 'number') {
+                const date = new Date((excelDate - (25567 + 2)) * 86400 * 1000);
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}/${m}/${d}`;
             }
+            return String(excelDate).trim();
+        }
 
-            const printData = JSON.parse(printDataRaw);
-            const employees = printData.employees || [];
-            
-            document.getElementById('cardCountDisplay').innerText = employees.length;
+        function importExcel(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-            if (employees.length === 0) {
-                container.innerHTML = '<h2 style="color:white; margin-top:100px;">لم يتم تحديد أي موظف للطباعة.</h2>';
-                return;
-            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-            let currentPage = document.createElement('div');
-            currentPage.className = 'page';
-            container.appendChild(currentPage);
+                document.getElementById('empTableBody').innerHTML = '';
 
-            let cardsInPage = 0;
+                for (let i = 4; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (!r || r.length === 0) continue;
 
-            employees.forEach((emp, index) => {
-                // إذا تجاوزت الصفحة 10 بطاقات، نفتح صفحة A4 جديدة
-                if (cardsInPage >= 10) {
-                    currentPage = document.createElement('div');
-                    currentPage.className = 'page';
-                    container.appendChild(currentPage);
-                    cardsInPage = 0;
-                }
+                    const code      = r[1] ? String(r[1]).trim() : '';
+                    const lastName  = r[2] ? String(r[2]).trim() : '';
+                    const firstName = r[3] ? String(r[3]).trim() : '';
+                    const birthDate = r[4] ? parseExcelDate(r[4]) : '';
+                    const rank      = r[5] ? String(r[5]).trim() : '';
+                    const photo     = code ? `${code}.jpg` : '';
 
-                // نص الـ QR الشامل لجيع المعلومات الأساسية
-                const qrContent = `الجمهورية الجزائرية الديمقراطية الشعبية\nوزارة التربية الوطنية\nالاسم واللقب: ${emp.firstName} ${emp.lastName}\nالرمز: ${emp.code}\nتاريخ الميلاد: ${emp.birthDate}\nالرتبة: ${emp.rank}\nالمؤسسة: ${printData.workPlace}`;
-
-                const cardHTML = `
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
-                            <h3>وزارة التربية الوطنية</h3>
-                        </div>
-
-                        <div class="card-body">
-                            <div class="info-section">
-                                <div class="info-row"><span class="info-label">الرقم:</span><span class="info-value">${emp.code}</span></div>
-                                <div class="info-row"><span class="info-label">اللقب:</span><span class="info-value">${emp.lastName}</span></div>
-                                <div class="info-row"><span class="info-label">الاسم:</span><span class="info-value">${emp.firstName}</span></div>
-                                <div class="info-row"><span class="info-label">الميلاد:</span><span class="info-value">${emp.birthDate}</span></div>
-                                <div class="info-row"><span class="info-label">الرتبة:</span><span class="info-value">${emp.rank}</span></div>
-                            </div>
-
-                            <div class="photo-section">
-                                <img src="${emp.photo}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100%\' height=\'100%\' fill=\'%23e2e8f0\'/><text x=\'50%\' y=\'50%\' font-size=\'12\' text-anchor=\'middle\' fill=\'%2394a3b8\' dy=\'.3em\'>بدون صورة</text></svg>'">
-                            </div>
-                        </div>
-
-                        <div class="card-footer">
-                            <div class="qr-container" data-qr="${encodeURIComponent(qrContent)}"></div>
-                            <div class="signature-section">
-                                <div>${printData.workPlace}</div>
-                                <div>مدير التربية: ${printData.directorName}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                currentPage.innerHTML += cardHTML;
-                cardsInPage++;
-            });
-
-            // توليد الـ QR لكل بطاقة باستخدام نمط Byte والترميز الصحيح
-            document.querySelectorAll('.qr-container').forEach(c => {
-                const rawText = decodeURIComponent(c.getAttribute('data-qr'));
-                if (rawText) {
-                    try {
-                        const qr = qrcode(0, 'M');
-                        qr.addData(encodeToUtf8(rawText));
-                        qr.make();
-                        c.innerHTML = qr.createSvgTag({ scalable: true });
-                    } catch (e) {
-                        console.error("خطأ توليد الـ QR:", e);
+                    if (code || lastName || firstName) {
+                        addRow({ code, lastName, firstName, birthDate, rank, photo });
                     }
                 }
-            });
+            };
+            reader.readAsArrayBuffer(file);
         }
 
-        // تشغيل البناء مباشرة فور التحميل
-        document.addEventListener('DOMContentLoaded', renderCards);
+        function handlePrintSubmit(event) {
+            event.preventDefault();
+
+            const selectedRows = document.querySelectorAll('#empTableBody tr');
+            const selectedEmployees = [];
+
+            selectedRows.forEach(row => {
+                if (row.querySelector('.emp-checkbox').checked) {
+                    selectedEmployees.push({
+                        code: row.querySelector('.emp-code').value,
+                        lastName: row.querySelector('.emp-lastName').value,
+                        firstName: row.querySelector('.emp-firstName').value,
+                        birthDate: row.querySelector('.emp-birthDate').value,
+                        rank: row.querySelector('.emp-rank').value,
+                        photo: row.querySelector('.emp-photo-data').value
+                    });
+                }
+            });
+
+            if (selectedEmployees.length === 0) {
+                alert('يرجى تحديد موظف واحد على الأقل!');
+                return;
+            }
+
+            const printData = {
+                workPlace: document.getElementById('workPlace').value,
+                directorName: document.getElementById('directorName').value,
+                cardBackImage: document.getElementById('cardBackImage').value,
+                employees: selectedEmployees
+            };
+
+            localStorage.setItem('print_data', JSON.stringify(printData));
+            window.location.href = 'print.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addRow({ code: '1001', lastName: 'سعداوي', firstName: 'زين العابدين', birthDate: '1992/05/14', rank: 'مهندس دولة' });
+        });
     </script>
 </body>
 </html>
