@@ -184,7 +184,7 @@
             </div>
         </div>
 
-        <!-- شريط التحكم بالفيصل والتحديد -->
+        <!-- شريط التحكم والإحصاء للتحديد -->
         <div class="selection-bar">
             <div>
                 <button type="button" class="btn btn-excel" onclick="addEmptyRow()">+ إضافة موظف يدوياً</button>
@@ -203,11 +203,11 @@
                             <th class="checkbox-cell">
                                 <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" checked title="تحديد/إلغاء الكل">
                             </th>
-                            <th>الرمز</th>
-                            <th>اللقب</th>
-                            <th>الاسم</th>
-                            <th>تاريخ الميلاد</th>
-                            <th>الرتبة</th>
+                            <th>الرمز (ع 2)</th>
+                            <th>اللقب (ع 3)</th>
+                            <th>الاسم (ع 4)</th>
+                            <th>تاريخ الميلاد (ع 5)</th>
+                            <th>الرتبة (ع 6)</th>
                             <th>الصورة (اسم الملف)</th>
                             <th>حذف</th>
                         </tr>
@@ -223,14 +223,14 @@
     </div>
 
     <script>
-        // التحديد الكلي للجدول
+        // التحديد الكلي لجميع الموظفين في الجدول
         function toggleSelectAll(master) {
             const checkboxes = document.querySelectorAll('.emp-checkbox');
             checkboxes.forEach(cb => cb.checked = master.checked);
             updateCounters();
         }
 
-        // تحديث عدادات التحديد
+        // تحديث عداد التحديد العلوي
         function updateCounters() {
             const total = document.querySelectorAll('.emp-checkbox').length;
             const selected = document.querySelectorAll('.emp-checkbox:checked').length;
@@ -250,7 +250,7 @@
             }
         }
 
-        // إضافة صف جديد
+        // إضافة صف موظف
         function addRow(data = {}) {
             const tbody = document.getElementById('empTableBody');
             const tr = document.createElement('tr');
@@ -277,7 +277,20 @@
             addRow({ code: count, lastName: '', firstName: '', birthDate: '', rank: '' });
         }
 
-        // قراءة وتفريغ ملف Excel من السطر 5 كما كان مخصصاً
+        // دالة تحويل التاريخ من صيغ أرقام Excel إلى YYYY/MM/DD
+        function parseExcelDate(excelDate) {
+            if (!excelDate) return '';
+            if (typeof excelDate === 'number') {
+                const date = new Date((excelDate - (25567 + 2)) * 86400 * 1000);
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}/${m}/${d}`;
+            }
+            return String(excelDate).trim();
+        }
+
+        // قراءة واستخراج ملف Excel بدءاً من السطر 5 بناءً على الأعمدة المحددة
         function importExcel(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -288,24 +301,23 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 
-                // تحويل لصفوف
                 const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                
-                document.getElementById('empTableBody').innerHTML = ''; // مسح القديم
+                document.getElementById('empTableBody').innerHTML = ''; // تفريغ القائمة الحالية
 
                 // القراءة بدءاً من السطر الخامس (Index 4)
                 for (let i = 4; i < rows.length; i++) {
                     const r = rows[i];
                     if (!r || r.length === 0) continue;
 
-                    const code = r[0] || (i - 3);
-                    const lastName = r[1] || '';
-                    const firstName = r[2] || '';
-                    const birthDate = r[3] || '';
-                    const rank = r[4] || '';
-                    const photo = code ? `${code}.jpg` : '';
+                    // جلب معطيات الأعمدة (Index 1 إلى 5)
+                    const code      = r[1] ? String(r[1]).trim() : ''; // العمود 2
+                    const lastName  = r[2] ? String(r[2]).trim() : ''; // العمود 3
+                    const firstName = r[3] ? String(r[3]).trim() : ''; // العمود 4
+                    const birthDate = r[4] ? parseExcelDate(r[4]) : ''; // العمود 5
+                    const rank      = r[5] ? String(r[5]).trim() : ''; // العمود 6
+                    const photo     = code ? `${code}.jpg` : '';
 
-                    if (lastName || firstName) {
+                    if (code || lastName || firstName) {
                         addRow({ code, lastName, firstName, birthDate, rank, photo });
                     }
                 }
@@ -313,9 +325,9 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // تجهيز بيانات الطباعة والانتقال
+        // تجميع وتمرير الموظفين المحددين فقط لحفظهم في localStorage والانتقال
         function handlePrintSubmit(event) {
-            event.preventDefault(); // منع الإرسال التقليدي لتفادي خطأ 405 على GitHub
+            event.preventDefault(); // تفادي إرسال طلبات POST لتجنب خطأ 405
 
             const selectedRows = document.querySelectorAll('#empTableBody tr');
             const selectedEmployees = [];
@@ -339,7 +351,6 @@
                 return;
             }
 
-            // إعداد كائن البيانات الموحد
             const printData = {
                 workPlace: document.getElementById('workPlace').value,
                 directorName: document.getElementById('directorName').value,
@@ -347,14 +358,14 @@
                 employees: selectedEmployees
             };
 
-            // الحفظ في LocalStorage
+            // حفظ البيانات محلياً
             localStorage.setItem('print_data', JSON.stringify(printData));
 
-            // فتح صفحة الطباعة المتوافقة
+            // التوجيه لصفحة الطباعة المعتمدة
             window.location.href = 'print.html';
         }
 
-        // إدراج بيانات تجريبية عند التشغيل لأول مرة
+        // وضع سجلين تجريبيين للتجربة المباشرة عند التحميل لأول مرة
         document.addEventListener('DOMContentLoaded', () => {
             addRow({ code: '1001', lastName: 'سعداوي', firstName: 'زين العابدين', birthDate: '1992/05/14', rank: 'مهندس دولة', photo: '1001.jpg' });
             addRow({ code: '1002', lastName: 'بن محمد', firstName: 'عبد الله', birthDate: '1988/11/20', rank: 'أستاذ التعليم الثانوي', photo: '1002.jpg' });
