@@ -3,307 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة إنشاء البطاقات المهنية</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- مكتبة قراءة ملفات Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <title>إدارة وطباعة البطاقات المهنية</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Amiri', 'Traditional Arabic', sans-serif;
+        }
+
         body {
-            font-family: 'Sakkal Majalla', 'Amiri', 'Traditional Arabic', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #047857;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .form-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        input {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #047857;
+        }
+
+        .emp-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .emp-table th, .emp-table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .emp-table th {
+            background-color: #047857;
+            color: white;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+
+        .btn-add {
+            background-color: #0284c7;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .btn-add:hover {
+            background-color: #0369a1;
+        }
+
+        .btn-submit {
+            background-color: #047857;
+            color: white;
+            width: 100%;
+            font-size: 18px;
+        }
+
+        .btn-submit:hover {
+            background-color: #065f46;
+        }
+
+        .btn-delete {
+            background-color: #e11d48;
+            color: white;
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background-color: #be123c;
         }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800">
+<body>
 
-    <div class="max-w-5xl mx-auto py-10 px-4">
-        <!-- Header -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8 text-center border-b-4 border-emerald-700 flex items-center justify-between">
-            <img src="minis.jpg" alt="شعار الوزارة" class="h-16 w-auto object-contain" onerror="this.style.display='none'">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800 mb-2">منصة توليد البطاقات المهنية</h1>
-                <p class="text-slate-500 text-base">استخراج البيانات وإعدادها للطباعة المزدوجة (وجه وظهر)</p>
+    <div class="container">
+        <h1>نظام إعداد وطباعة البطاقات المهنية</h1>
+
+        <!-- معلومات المؤسسة والمدير -->
+        <div class="form-section">
+            <div class="form-group">
+                <label>مكان العمل (المؤسسة):</label>
+                <input type="text" id="workPlace" placeholder="مثال: ثانوية متقن توقرت" value="ثانوية متقن توقرت">
             </div>
-            <div class="w-16"></div> <!-- للتوازن البصري -->
-        </div>
-
-        <!-- Inputs Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Excel Upload Box -->
-            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
-                <h3 class="font-bold text-slate-700 mb-2 text-base flex items-center gap-2">
-                    <span class="w-3 h-3 bg-blue-600 rounded-full inline-block"></span>
-                    1. ملف Excel (مكان العمل)
-                </h3>
-                <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
-                    <div class="flex flex-col items-center justify-center text-center p-2">
-                        <svg class="w-6 h-6 mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                        <p class="text-xs text-slate-500" id="excel-label-text">اختر ملف Excel</p>
-                    </div>
-                    <input id="excel-file" type="file" accept=".xlsx, .xls" class="hidden" />
-                </label>
+            <div class="form-group">
+                <label>اسم مدير التربية:</label>
+                <input type="text" id="directorName" placeholder="مثال: أحمد علي" value="أحمد علي">
             </div>
-
-            <!-- Photos Upload Box -->
-            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
-                <h3 class="font-bold text-slate-700 mb-2 text-base flex items-center gap-2">
-                    <span class="w-3 h-3 bg-emerald-600 rounded-full inline-block"></span>
-                    2. صور الموظفين
-                </h3>
-                <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
-                    <div class="flex flex-col items-center justify-center text-center p-2">
-                        <svg class="w-6 h-6 mb-1 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <p class="text-xs text-slate-500">اختر الصور (الاسم = الرمز)</p>
-                    </div>
-                    <input id="photos-files" type="file" accept="image/*" multiple class="hidden" />
-                </label>
-            </div>
-
-            <!-- Card Back Image Box -->
-            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
-                <h3 class="font-bold text-slate-700 mb-2 text-base flex items-center gap-2">
-                    <span class="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
-                    3. صورة خلفية البطاقة (اختياري)
-                </h3>
-                <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
-                    <div class="flex flex-col items-center justify-center text-center p-2">
-                        <svg class="w-6 h-6 mb-1 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <p class="text-xs text-slate-500" id="card-back-label">تلقائياً: aria.jpg</p>
-                    </div>
-                    <input id="card-back-file" type="file" accept="image/*" class="hidden" />
-                </label>
+            <div class="form-group">
+                <label>اسم صورة ظهر البطاقة:</label>
+                <input type="text" id="cardBackImage" value="aria.jpg">
             </div>
         </div>
 
-        <!-- Director Name Input -->
-        <div class="bg-white rounded-xl shadow-md p-5 mb-8 border border-slate-200">
-            <label for="director-name" class="block font-bold text-slate-700 mb-2 text-lg">اسم مدير التربية:</label>
-            <input type="text" id="director-name" placeholder="أدخل اسم مدير التربية الذي سيظهر في البطاقة..." class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 text-lg">
-        </div>
+        <h3>قائمة الموظفين</h3>
+        <br>
+        <button type="button" class="btn btn-add" onclick="addEmployeeRow()">+ إضافة موظف</button>
 
-        <!-- Action Button -->
-        <div id="action-area" class="hidden text-center mb-8">
-            <button onclick="sendToPrint()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition duration-200 flex items-center justify-center mx-auto gap-2 text-xl">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                معاينة وطباعة البطاقات
-            </button>
-        </div>
+        <form id="cardsForm" onsubmit="handleFormSubmit(event)">
+            <table class="emp-table">
+                <thead>
+                    <tr>
+                        <th>الرقم</th>
+                        <th>اللقب</th>
+                        <th>الاسم</th>
+                        <th>تاريخ الميلاد</th>
+                        <th>الرتبة</th>
+                        <th>حذف</th>
+                    </tr>
+                </thead>
+                <tbody id="employeesTableBody">
+                    <!-- سيتم إضافة الصفوف هنا تلقائياً -->
+                </tbody>
+            </table>
 
-        <!-- Data Preview Table -->
-        <div id="preview-area" class="hidden bg-white rounded-xl shadow-md p-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h2 class="text-xl font-bold">معاينة البيانات المستخرجة (<span id="total-employees">0</span> موظف)</h2>
-                <div class="text-sm bg-emerald-50 text-emerald-800 px-3 py-1 rounded-lg border border-emerald-200 font-bold">
-                    مكان العمل: <span id="work-place-display">-</span>
-                </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-base text-right text-slate-600">
-                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-sm">
-                        <tr>
-                            <th class="p-3">#</th>
-                            <th class="p-3">الصورة</th>
-                            <th class="p-3">الرمز الوظيفي</th>
-                            <th class="p-3">اللقب والاسم</th>
-                            <th class="p-3">تاريخ الميلاد (YYYY/MM/DD)</th>
-                            <th class="p-3">الرتبة</th>
-                            <th class="p-3">تغيير الصورة</th>
-                        </tr>
-                    </thead>
-                    <tbody id="excel-table-body" class="divide-y divide-slate-200"></tbody>
-                </table>
-            </div>
-        </div>
+            <button type="submit" class="btn btn-submit">توليد وانتقال لصفحة الطباعة 🖨️</button>
+        </form>
     </div>
 
-    <form id="printForm" action="print.php" method="POST" target="_blank" class="hidden">
-        <input type="hidden" name="employees_data" id="employees_data_input">
-        <input type="hidden" name="work_place" id="work_place_input">
-        <input type="hidden" name="director_name" id="director_name_input">
-        <input type="hidden" name="card_back_image" id="card_back_image_input">
-    </form>
-
     <script>
-        let parsedData = [];
-        let uploadedPhotos = {};
-        let workPlaceName = '';
-        let cardBackImageData = 'aria.jpg'; // الصورة الافتراضية
+        // إضافة صف موظف جديد لجدول الإدخال
+        function addEmployeeRow(data = {}) {
+            const tbody = document.getElementById('employeesTableBody');
+            const rowCount = tbody.rows.length + 1;
 
-        function formatDateToYYYYMMDD(val) {
-            if (val === null || val === undefined || val === '') return '';
-            try {
-                if (typeof val === 'number') {
-                    if (window.XLSX && XLSX.SSF) {
-                        const dateObj = XLSX.SSF.parse_date_code(val);
-                        if (dateObj) {
-                            const day = String(dateObj.d).padStart(2, '0');
-                            const month = String(dateObj.m).padStart(2, '0');
-                            const year = dateObj.y;
-                            return `${year}/${month}/${day}`;
-                        }
-                    }
-                }
-                if (val instanceof Date) {
-                    const day = String(val.getDate()).padStart(2, '0');
-                    const month = String(val.getMonth() + 1).padStart(2, '0');
-                    const year = val.getFullYear();
-                    return `${year}/${month}/${day}`;
-                }
-                let str = String(val).trim();
-                let parts = str.split(/[-/.]/);
-                if (parts.length === 3) {
-                    if (parts[0].length === 4) {
-                        return `${parts[0]}/${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
-                    } else if (parts[2].length === 4) {
-                        return `${parts[2]}/${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}`;
-                    }
-                }
-                return str;
-            } catch (e) {
-                return String(val);
-            }
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="emp-code" value="${data.code || '100' + rowCount}" required style="width: 70px;"></td>
+                <td><input type="text" class="emp-lastName" value="${data.lastName || ''}" placeholder="اللقب" required></td>
+                <td><input type="text" class="emp-firstName" value="${data.firstName || ''}" placeholder="الاسم" required></td>
+                <td><input type="text" class="emp-birthDate" value="${data.birthDate || '1990/01/01'}" placeholder="YYYY/MM/DD" required style="width: 110px;"></td>
+                <td><input type="text" class="emp-rank" value="${data.rank || 'أستاذ التعليم الثانوي'}" placeholder="الرتبة" required></td>
+                <td><button type="button" class="btn btn-delete" onclick="this.closest('tr').remove()">حذف</button></td>
+            `;
+            tbody.appendChild(tr);
         }
 
-        // رفع خلفية خاصة بديلة عن aria.jpg
-        document.getElementById('card-back-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                cardBackImageData = evt.target.result;
-                document.getElementById('card-back-label').textContent = file.name;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        document.getElementById('photos-files').addEventListener('change', function(e) {
-            const files = e.target.files;
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                    uploadedPhotos[fileNameWithoutExt.trim()] = evt.target.result;
-                    matchPhotosToEmployees();
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-
-        document.getElementById('excel-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            workPlaceName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-            document.getElementById('work-place-display').textContent = workPlaceName;
-            document.getElementById('excel-label-text').textContent = file.name;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, {type: 'array', cellDates: true, cellNF: false, cellText: false});
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    
-                    const rawRows = XLSX.utils.sheet_to_json(firstSheet, {header: 1, range: 4, defval: ''});
-                    
-                    parsedData = [];
-                    rawRows.forEach((row) => {
-                        if (!row || row.length === 0) return;
-
-                        const code      = row[1] !== undefined ? String(row[1]).trim() : '';
-                        const lastName  = row[2] !== undefined ? String(row[2]).trim() : '';
-                        const firstName = row[3] !== undefined ? String(row[3]).trim() : '';
-                        const birthDate = row[4] !== undefined ? formatDateToYYYYMMDD(row[4]) : '';
-                        const rank      = row[5] !== undefined ? String(row[5]).trim() : '';
-
-                        if (code || lastName || firstName) {
-                            parsedData.push({
-                                code: code,
-                                lastName: lastName,
-                                firstName: firstName,
-                                birthDate: birthDate,
-                                rank: rank,
-                                photo: ''
-                            });
-                        }
-                    });
-
-                    matchPhotosToEmployees();
-                } catch (err) {
-                    alert('حدث خطأ أثناء قراءة ملف Excel: ' + err.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function matchPhotosToEmployees() {
-            parsedData.forEach(emp => {
-                if (emp.code && uploadedPhotos[emp.code]) {
-                    emp.photo = uploadedPhotos[emp.code];
-                }
-            });
-            renderPreviewTable();
+        // إدخال بيانات نمطية افتراضية للتجربة السريعة
+        function loadDefaultEmployees() {
+            const sampleData = [
+                { code: "1001", lastName: "سعداوي", firstName: "زين العابدين", birthDate: "1992/05/14", rank: "مهندس دولة" },
+                { code: "1002", lastName: "بن محمد", firstName: "عبد الله", birthDate: "1988/11/20", rank: "أستاذ التعليم الثانوي" }
+            ];
+            sampleData.forEach(emp => addEmployeeRow(emp));
         }
 
-        function renderPreviewTable() {
-            const tbody = document.getElementById('excel-table-body');
-            tbody.innerHTML = '';
+        // معالجة الضغط على زر التوليد والانتقال
+        function handleFormSubmit(event) {
+            event.preventDefault(); // منع الإرسال التقليدي (لتفادي خطأ 405)
 
-            if (parsedData.length === 0) {
-                alert('لم يتم العثور على بيانات في الملف بدءاً من الصف الخامس!');
-                return;
-            }
+            const rows = document.querySelectorAll('#employeesTableBody tr');
+            const employeesList = [];
 
-            parsedData.forEach((emp, index) => {
-                const tr = document.createElement('tr');
-                const photoSrc = emp.photo ? emp.photo : '';
-                const fullName = `${emp.lastName} ${emp.firstName}`.trim();
-                
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold">${index + 1}</td>
-                    <td class="p-3">
-                        ${photoSrc 
-                            ? `<img src="${photoSrc}" class="w-10 h-12 object-cover rounded border">` 
-                            : `<div class="w-10 h-12 bg-slate-100 border border-dashed rounded flex items-center justify-center text-[10px] text-slate-400">بلا صورة</div>`
-                        }
-                    </td>
-                    <td class="p-3 font-mono text-emerald-700 font-bold">${emp.code || '-'}</td>
-                    <td class="p-3 font-bold text-slate-800">${fullName || '-'}</td>
-                    <td class="p-3 font-mono">${emp.birthDate || '-'}</td>
-                    <td class="p-3">${emp.rank || '-'}</td>
-                    <td class="p-3">
-                        <input type="file" accept="image/*" class="text-xs" onchange="uploadSinglePhoto(event, ${index})">
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            rows.forEach(row => {
+                employeesList.push({
+                    code: row.querySelector('.emp-code').value,
+                    lastName: row.querySelector('.emp-lastName').value,
+                    firstName: row.querySelector('.emp-firstName').value,
+                    birthDate: row.querySelector('.emp-birthDate').value,
+                    rank: row.querySelector('.emp-rank').value,
+                    photo: "" // يمكن إضافة مسار الصورة هنا إذا توفرت
+                });
             });
 
-            document.getElementById('total-employees').textContent = parsedData.length;
-            document.getElementById('preview-area').classList.remove('hidden');
-            document.getElementById('action-area').classList.remove('hidden');
-        }
-
-        function uploadSinglePhoto(event, index) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                parsedData[index].photo = evt.target.result;
-                renderPreviewTable();
+            // تجميع البيانات في الكائن الموحد
+            const printData = {
+                workPlace: document.getElementById('workPlace').value,
+                directorName: document.getElementById('directorName').value,
+                cardBackImage: document.getElementById('cardBackImage').value,
+                employees: employeesList
             };
-            reader.readAsDataURL(file);
+
+            // حفظ البيانات في LocalStorage التابع للمتصفح
+            localStorage.setItem('print_data', JSON.stringify(printData));
+
+            // التوجيه المباشر إلى صفحة الطباعة
+            window.location.href = 'print.html';
         }
 
-        function sendToPrint() {
-            if (parsedData.length === 0) return;
-            document.getElementById('employees_data_input').value = JSON.stringify(parsedData);
-            document.getElementById('work_place_input').value = workPlaceName;
-            document.getElementById('director_name_input').value = document.getElementById('director-name').value.trim();
-            document.getElementById('card_back_image_input').value = cardBackImageData;
-            document.getElementById('printForm').submit();
-        }
+        // تحميل موظفين تلقائياً عند فتح الصفحة لأول مرة
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDefaultEmployees();
+        });
     </script>
 </body>
 </html>
