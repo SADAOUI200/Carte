@@ -190,7 +190,6 @@
             color: #000000;
         }
 
-        /* --- عنوان البطاقة الرئيسي --- */
         .card-main-title {
             text-align: center;
             font-size: 11pt;
@@ -201,7 +200,6 @@
             line-height: 1;
         }
 
-        /* --- جسم البطاقة --- */
         .card-body {
             display: flex;
             align-items: center;
@@ -212,8 +210,8 @@
         }
 
         .qr-container {
-            width: 20mm;
-            height: 20mm;
+            width: 21mm;
+            height: 21mm;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -255,7 +253,6 @@
             line-height: 1.1;
         }
 
-        /* --- العمود الأيمن (الصورة والرقم والمدير) --- */
         .photo-column {
             display: flex;
             flex-direction: column;
@@ -273,11 +270,6 @@
             text-align: center;
             line-height: 1;
             white-space: nowrap;
-        }
-
-        .code-space {
-            display: inline-block;
-            width: 10mm;
         }
 
         .photo-container {
@@ -377,16 +369,13 @@
         <button onclick="printBack()" class="btn-print btn-print-back">طباعة الظهر (الخلفية)</button>
     </div>
 
-    <!-- الحاوية الديناميكية للبطاقات -->
     <div id="printContainer"></div>
 
     <script>
-        // دالة تحويل النص العربي إلى UTF-8 لضمان قراءة رمز QR بسهولة
         function utf8Encode(str) {
             return unescape(encodeURIComponent(str));
         }
 
-        // تنسيق التاريخ بحسب النمط (YYYY/MM/DD)
         function formatDate(dateObj) {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -396,7 +385,6 @@
 
         function renderCards() {
             const container = document.getElementById('printContainer');
-            
             const printDataRaw = localStorage.getItem('print_data');
             
             let printData = null;
@@ -433,9 +421,7 @@
             const directorName = printData.directorName || '';
             const cardBackImage = printData.cardBackImage || 'aria.jpg';
 
-            // حساب تاريخ الإصدار (تاريخ النظام اليوم) وتاريخ نهاية الصلاحية (+ سنتين)
             const now = new Date();
-            const issueDate = formatDate(now);
             const expDateObj = new Date(now);
             expDateObj.setFullYear(expDateObj.getFullYear() + 2);
             const expiryDate = formatDate(expDateObj);
@@ -446,7 +432,6 @@
 
             let html = '';
 
-            // 1. صفحات الوجه (Front Pages)
             for (let p = 0; p < pages; p++) {
                 html += `<div class="page front-page">`;
                 for (let i = 0; i < 8; i++) {
@@ -462,16 +447,9 @@
                     const rank = emp.rank || '';
                     const photo = emp.photo || '';
 
-                    // محتوى رمز الاستجابة السريعة (QR) محدد بوضوح ليشمل كافة تفاصيل البطاقة
-                    const qrContent = `الجمهورية الجزائرية الديمقراطية الشعبية
-وزارة التربية الوطنية
-بطاقة التعريف المهنية
-رمز الموظف: ${code}/${currentYear}
+                    // محتوى رمز الاستجابة السريعة: الرمز الوظيفي + اللقب والاسم + تاريخ نهاية الصلاحية
+                    const qrContent = `الرمز الوظيفي: ${code}/${currentYear}
 الاسم واللقب: ${fullName}
-تاريخ الميلاد: ${birthDate}
-الرتبة: ${rank}
-مكان العمل: ${workPlace}
-تاريخ الإصدار: ${issueDate}
 تاريخ نهاية الصلاحية: ${expiryDate}`;
 
                     const qrId = `qr_${p}_${i}`;
@@ -541,7 +519,6 @@
                 html += `</div>`;
             }
 
-            // 2. صفحات الظهر (Back Pages)
             for (let p = 0; p < pages; p++) {
                 html += `<div class="page back-page">`;
                 for (let i = 0; i < 8; i++) {
@@ -557,17 +534,16 @@
 
             container.innerHTML = html;
 
-            // توليد الـ QR باستخدام ترميز Byte لضمان قراءة اللغة العربية بوضوح ودقة
             document.querySelectorAll('.qr-container').forEach(c => {
                 const rawText = decodeURIComponent(c.getAttribute('data-qr'));
                 if (rawText) {
                     try {
-                        const qr = qrcode(0, 'M');
+                        const qr = qrcode(0, 'L');
                         qr.addData(utf8Encode(rawText), 'Byte');
                         qr.make();
-                        c.innerHTML = qr.createSvgTag({ scalable: true });
+                        c.innerHTML = qr.createSvgTag({ scalable: true, margin: 0 });
                     } catch (e) {
-                        console.error("خطأ أثناء توليد الـ QR:", e);
+                        console.error("خطأ إنشاء QR:", e);
                     }
                 }
             });
