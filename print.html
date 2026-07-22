@@ -341,13 +341,6 @@
             object-fit: fill;
         }
 
-        .no-data-msg {
-            text-align: center;
-            padding: 50px 20px;
-            font-size: 18px;
-            color: #e11d48;
-        }
-
         @media print {
             .no-print {
                 display: none !important;
@@ -388,11 +381,12 @@
     <div id="printContainer"></div>
 
     <script>
-        // تحويل النص العربي إلى ترميز UTF-8 صريح لحل مشكلة الترميز في QR
+        // دالة تحويل النص العربي إلى UTF-8 لضمان قراءة رمز QR بسهولة
         function utf8Encode(str) {
             return unescape(encodeURIComponent(str));
         }
 
+        // تنسيق التاريخ بحسب النمط (YYYY/MM/DD)
         function formatDate(dateObj) {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -403,7 +397,6 @@
         function renderCards() {
             const container = document.getElementById('printContainer');
             
-            // قراءة البيانات من localStorage
             const printDataRaw = localStorage.getItem('print_data');
             
             let printData = null;
@@ -415,10 +408,9 @@
                 }
             }
 
-            // بيانات تجريبية للمعاينة في حالة عدم توفر بيانات
             if (!printData || !printData.employees || printData.employees.length === 0) {
                 const sampleEmployees = [];
-                for (let i = 1; i <= 9; i++) {
+                for (let i = 1; i <= 8; i++) {
                     sampleEmployees.push({
                         code: "100" + i,
                         lastName: "بن محمد",
@@ -441,6 +433,7 @@
             const directorName = printData.directorName || '';
             const cardBackImage = printData.cardBackImage || 'aria.jpg';
 
+            // حساب تاريخ الإصدار (تاريخ النظام اليوم) وتاريخ نهاية الصلاحية (+ سنتين)
             const now = new Date();
             const issueDate = formatDate(now);
             const expDateObj = new Date(now);
@@ -453,7 +446,7 @@
 
             let html = '';
 
-            // 1. توليد صفحات الوجه (Front Pages)
+            // 1. صفحات الوجه (Front Pages)
             for (let p = 0; p < pages; p++) {
                 html += `<div class="page front-page">`;
                 for (let i = 0; i < 8; i++) {
@@ -469,13 +462,18 @@
                     const rank = emp.rank || '';
                     const photo = emp.photo || '';
 
-                    const qrContent = `الرقم: ${code}
+                    // محتوى رمز الاستجابة السريعة (QR) محدد بوضوح ليشمل كافة تفاصيل البطاقة
+                    const qrContent = `الجمهورية الجزائرية الديمقراطية الشعبية
+وزارة التربية الوطنية
+بطاقة التعريف المهنية
+رمز الموظف: ${code}/${currentYear}
 الاسم واللقب: ${fullName}
 تاريخ الميلاد: ${birthDate}
 الرتبة: ${rank}
 مكان العمل: ${workPlace}
 تاريخ الإصدار: ${issueDate}
-تاريخ الصلاحية: ${expiryDate}`;
+تاريخ نهاية الصلاحية: ${expiryDate}`;
+
                     const qrId = `qr_${p}_${i}`;
 
                     html += `
@@ -524,7 +522,7 @@
 
                             <div class="photo-column">
                                 <div class="code-above-photo">
-                                    الرقم:<span class="code-space"></span>/${currentYear}
+                                    الرقم: ${code}/${currentYear}
                                 </div>
                                 <div class="photo-container">
                                     ${photo ? `<img src="${photo}" alt="الصورة">` : `<span>صورة</span>`}
@@ -543,7 +541,7 @@
                 html += `</div>`;
             }
 
-            // 2. توليد صفحات الظهر (Back Pages)
+            // 2. صفحات الظهر (Back Pages)
             for (let p = 0; p < pages; p++) {
                 html += `<div class="page back-page">`;
                 for (let i = 0; i < 8; i++) {
@@ -559,20 +557,17 @@
 
             container.innerHTML = html;
 
-            // توليد الـ QR بشكل صحيح ومقروء تماماً للهواتف الذكية
+            // توليد الـ QR باستخدام ترميز Byte لضمان قراءة اللغة العربية بوضوح ودقة
             document.querySelectorAll('.qr-container').forEach(c => {
                 const rawText = decodeURIComponent(c.getAttribute('data-qr'));
                 if (rawText) {
                     try {
-                        // المستوى 'M' يعطي توازناً ممتازاً بين حجم النقاط وسهولة القراءة
                         const qr = qrcode(0, 'M');
-                        
-                        // إضافة نوع البيانات صراحة كـ Byte وتمرير النص المرمز بـ UTF-8
                         qr.addData(utf8Encode(rawText), 'Byte');
                         qr.make();
                         c.innerHTML = qr.createSvgTag({ scalable: true });
                     } catch (e) {
-                        console.error("خطأ أثناء توليد QR:", e);
+                        console.error("خطأ أثناء توليد الـ QR:", e);
                     }
                 }
             });
