@@ -388,6 +388,7 @@
     <div id="printContainer"></div>
 
     <script>
+        // تحويل النص العربي إلى ترميز UTF-8 صريح لحل مشكلة الترميز في QR
         function utf8Encode(str) {
             return unescape(encodeURIComponent(str));
         }
@@ -402,10 +403,9 @@
         function renderCards() {
             const container = document.getElementById('printContainer');
             
-            // قراءة البيانات من localStorage المفترضة
+            // قراءة البيانات من localStorage
             const printDataRaw = localStorage.getItem('print_data');
             
-            // بيانات تجريبية في حال عدم وجود بيانات
             let printData = null;
             if (printDataRaw) {
                 try {
@@ -415,7 +415,7 @@
                 }
             }
 
-            // إذا لم توجد بيانات مخزنة، يتم تحميل 9 بطاقات نموذجية لتجربة المعاينة على GitHub Pages
+            // بيانات تجريبية للمعاينة في حالة عدم توفر بيانات
             if (!printData || !printData.employees || printData.employees.length === 0) {
                 const sampleEmployees = [];
                 for (let i = 1; i <= 9; i++) {
@@ -559,17 +559,20 @@
 
             container.innerHTML = html;
 
-            // توليد الـ QR لكل بطاقة
+            // توليد الـ QR بشكل صحيح ومقروء تماماً للهواتف الذكية
             document.querySelectorAll('.qr-container').forEach(c => {
                 const rawText = decodeURIComponent(c.getAttribute('data-qr'));
                 if (rawText) {
                     try {
+                        // المستوى 'M' يعطي توازناً ممتازاً بين حجم النقاط وسهولة القراءة
                         const qr = qrcode(0, 'M');
-                        qr.addData(utf8Encode(rawText));
+                        
+                        // إضافة نوع البيانات صراحة كـ Byte وتمرير النص المرمز بـ UTF-8
+                        qr.addData(utf8Encode(rawText), 'Byte');
                         qr.make();
                         c.innerHTML = qr.createSvgTag({ scalable: true });
                     } catch (e) {
-                        console.error("خطأ QR:", e);
+                        console.error("خطأ أثناء توليد QR:", e);
                     }
                 }
             });
