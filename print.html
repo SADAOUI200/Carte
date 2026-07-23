@@ -35,6 +35,7 @@
             margin-bottom: 20px;
             display: flex;
             justify-content: center;
+            align-items: center;
             gap: 15px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
@@ -50,6 +51,10 @@
             font-size: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: background 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-print:hover {
@@ -62,6 +67,14 @@
 
         .btn-print-back:hover {
             background-color: #0369a1;
+        }
+
+        .btn-home {
+            background-color: #475569;
+        }
+
+        .btn-home:hover {
+            background-color: #334155;
         }
 
         .page {
@@ -272,6 +285,12 @@
             white-space: nowrap;
         }
 
+        /* فراغ بقدر 1 سم بين الكلمة والسنة */
+        .code-space-1cm {
+            display: inline-block;
+            width: 1cm;
+        }
+
         .photo-container {
             width: 23mm;
             height: 27mm;
@@ -365,6 +384,7 @@
 <body class="print-front-mode">
 
     <div class="no-print">
+        <button onclick="goToHome()" class="btn-print btn-home">العودة إلى الصفحة الرئيسية</button>
         <button onclick="printFront()" class="btn-print">طباعة الوجه (البطاقات)</button>
         <button onclick="printBack()" class="btn-print btn-print-back">طباعة الظهر (الخلفية)</button>
     </div>
@@ -381,6 +401,14 @@
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
             return `${y}/${m}/${d}`;
+        }
+
+        function goToHome() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
         }
 
         function renderCards() {
@@ -447,8 +475,8 @@
                     const rank = emp.rank || '';
                     const photo = emp.photo || '';
 
-                    // محتوى رمز الاستجابة السريعة: الرمز الوظيفي + اللقب والاسم + تاريخ نهاية الصلاحية
-                    const qrContent = `الرمز الوظيفي: ${code}/${currentYear}
+                    // 1. رمز QR يتضمن الرمز الوظيفي فقط (دون سنة) + باقي المعلومات
+                    const qrContent = `الرمز الوظيفي: ${code}
 الاسم واللقب: ${fullName}
 تاريخ نهاية الصلاحية: ${expiryDate}`;
 
@@ -499,8 +527,9 @@
                             </div>
 
                             <div class="photo-column">
+                                <!-- 2. كلمة الرقم متبوعة بـ فراغ 1 سم ثم السنة -->
                                 <div class="code-above-photo">
-                                    الرقم: ${code}/${currentYear}
+                                    الرقم:<span class="code-space-1cm"></span>/${currentYear}
                                 </div>
                                 <div class="photo-container">
                                     ${photo ? `<img src="${photo}" alt="الصورة">` : `<span>صورة</span>`}
