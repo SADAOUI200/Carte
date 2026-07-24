@@ -190,10 +190,6 @@
                 <input type="text" id="directorName" value="أحمد علي">
             </div>
             <div class="form-group">
-                <label>صورة ظهر البطاقة الافتراضية:</label>
-                <input type="text" id="cardBackImage" value="aria.jpg">
-            </div>
-            <div class="form-group">
                 <label>استيراد ملف Excel الموظفين:</label>
                 <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="importExcel(event)">
             </div>
@@ -215,14 +211,14 @@
                             <th class="checkbox-cell">
                                 <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" checked title="تحديد/إلغاء الكل">
                             </th>
-                            <th>الرمز (ع 2)</th>
-                            <th>اللقب (ع 3)</th>
-                            <th>الاسم (ع 4)</th>
-                            <th>تاريخ الميلاد (ع 5)</th>
-                            <th>الرتبة (ع 6)</th>
+                            <th>الرمز</th>
+                            <th>اللقب</th>
+                            <th>الاسم</th>
+                            <th>تاريخ الميلاد</th>
+                            <th>الرتبة</th>
                             <th>معاينة</th>
                             <th>إدراج وقص الصورة</th>
-                            <th>حذف</th>
+                            <th>الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="empTableBody"></tbody>
@@ -233,7 +229,7 @@
         </form>
     </div>
 
-    <!-- Modal القص -->
+    <!-- نافذة قص الصورة Modal -->
     <div id="cropModal" class="modal">
         <div class="modal-content">
             <h3>قص صورة الموظف</h3>
@@ -245,7 +241,7 @@
         </div>
     </div>
 
-    <!-- خفي لاختيار الملفات -->
+    <!-- عنصر خفي لاختيار الملفات -->
     <input type="file" id="rowFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
 
     <script>
@@ -286,7 +282,9 @@
                 <td>
                     <button type="button" class="btn btn-crop" onclick="triggerPhotoUpload(this)">اختر وقص</button>
                 </td>
-                <td><button type="button" class="btn btn-danger" onclick="this.closest('tr').remove(); updateCounters();">حذف</button></td>
+                <td>
+                    <button type="button" class="btn btn-danger" onclick="this.closest('tr').remove(); updateCounters();">حذف</button>
+                </td>
             `;
 
             tbody.appendChild(tr);
@@ -315,7 +313,7 @@
 
                 if (cropper) cropper.destroy();
                 cropper = new Cropper(img, {
-                    aspectRatio: 23 / 27, // نسبة الطول للعرض المطلوبة للبطاقة
+                    aspectRatio: 23 / 27,
                     viewMode: 1
                 });
             };
@@ -411,7 +409,7 @@
             const printData = {
                 workPlace: document.getElementById('workPlace').value,
                 directorName: document.getElementById('directorName').value,
-                cardBackImage: document.getElementById('cardBackImage').value,
+                cardBackImage: 'aria.jpg',
                 employees: selectedEmployees
             };
 

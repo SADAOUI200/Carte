@@ -212,14 +212,19 @@
             color: #000000;
         }
 
+        /* التعديل: إزاحة السطر الأسفل بمقدار 1 ملم بضبط الـ border و الـ padding */
         .card-main-title {
             text-align: center;
             font-size: 11pt;
             font-weight: bold;
             color: #000000;
             margin-top: 2px;
-            text-decoration: underline;
             line-height: 1;
+            display: inline-block;
+            margin-left: auto;
+            margin-right: auto;
+            border-bottom: 1px solid #000000;
+            padding-bottom: 1mm;
         }
 
         .card-body {
@@ -426,6 +431,9 @@
 
         async function downloadCardAsJpg(cardElement, filename) {
             try {
+                const originalTransform = cardElement.style.transform;
+                cardElement.style.transform = 'none';
+
                 const canvas = await html2canvas(cardElement, {
                     scale: 3,
                     useCORS: true,
@@ -434,10 +442,14 @@
                     backgroundColor: '#ffffff'
                 });
 
+                cardElement.style.transform = originalTransform;
+
                 const link = document.createElement('a');
                 link.download = `${filename}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.95);
+                document.body.appendChild(link);
                 link.click();
+                document.body.removeChild(link);
             } catch (err) {
                 console.error("خطأ أثناء تحميل الصورة:", err);
                 alert("حدث خطأ أثناء حفظ الصورة!");
@@ -534,7 +546,9 @@
                             </div>
                         </div>
 
-                        <div class="card-main-title">بطاقة التعريف المهنية</div>
+                        <div style="text-align: center;">
+                            <div class="card-main-title">بطاقة التعريف المهنية</div>
+                        </div>
 
                         <div class="card-body">
                             <div class="qr-container" id="${qrId}" data-qr="${encodeURIComponent(qrContent)}"></div>
