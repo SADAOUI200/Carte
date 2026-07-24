@@ -6,6 +6,8 @@
     <title>طباعة البطاقات المهنية</title>
     <!-- مكتبة qrcode-generator -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <!-- مكتبة تحويل HTML إلى صورة (html2canvas) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
@@ -105,6 +107,13 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover, .card-back:hover {
+            transform: scale(1.015);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         /* --- الهيدر --- */
@@ -344,6 +353,8 @@
             border-radius: 5px;
             overflow: hidden;
             background: #ffffff;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
         .card-back img {
@@ -369,6 +380,8 @@
 
             .card, .card-back {
                 border: 0.5pt solid #cbd5e1;
+                transform: none !important;
+                box-shadow: none !important;
             }
 
             body.print-front-mode .back-page {
@@ -408,6 +421,26 @@
                 window.history.back();
             } else {
                 window.location.href = 'index.html';
+            }
+        }
+
+        async function downloadCardAsJpg(cardElement, filename) {
+            try {
+                const canvas = await html2canvas(cardElement, {
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+
+                const link = document.createElement('a');
+                link.download = `${filename}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            } catch (err) {
+                console.error("خطأ أثناء تحميل الصورة:", err);
+                alert("حدث خطأ أثناء حفظ الصورة!");
             }
         }
 
@@ -475,15 +508,15 @@
                     const rank = emp.rank || '';
                     const photo = emp.photo || '';
 
-                    // 1. رمز QR يتضمن الرمز الوظيفي فقط (دون سنة) + باقي المعلومات
                     const qrContent = `الرمز الوظيفي: ${code}
 الاسم واللقب: ${fullName}
 تاريخ نهاية الصلاحية: ${expiryDate}`;
 
                     const qrId = `qr_${p}_${i}`;
+                    const fileNameToSave = `بطاقة_${fullName || code}_${code}`;
 
                     html += `
-                    <div class="card">
+                    <div class="card" title="اضغط لتحميل البطاقة كصورة JPG" onclick="downloadCardAsJpg(this, '${fileNameToSave}')">
                         <div class="card-header">
                             <div class="corner-stripes">
                                 <div class="stripe-red"></div>
@@ -527,7 +560,6 @@
                             </div>
 
                             <div class="photo-column">
-                                <!-- 2. كلمة الرقم متبوعة بـ فراغ 1 سم ثم السنة -->
                                 <div class="code-above-photo">
                                     الرقم:<span class="code-space-1cm"></span>/${currentYear}
                                 </div>
@@ -553,8 +585,13 @@
                 for (let i = 0; i < 8; i++) {
                     const index = (p * 8) + i;
                     if (index >= total) break;
+                    const emp = employees[index];
+                    const code = emp.code || '';
+                    const fullName = (emp.lastName + ' ' + emp.firstName).trim();
+                    const backFileName = `ظهر_بطاقة_${fullName || code}_${code}`;
+
                     html += `
-                    <div class="card-back">
+                    <div class="card-back" title="اضغط لتحميل خلفية البطاقة كصورة JPG" onclick="downloadCardAsJpg(this, '${backFileName}')">
                         <img src="${cardBackImage}" alt="خلفية البطاقة" onerror="this.src='aria.jpg'">
                     </div>`;
                 }
